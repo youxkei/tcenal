@@ -1,0 +1,9 @@
+{
+	"name": "tcenal",
+	"description": "A compile-time syntax extension library.",
+	"copyright": "Copyright © 2014",
+	"authors": ["Hisayuki Mima"],
+    "license": "CC0",
+	"dependencies": {
+	}
+}
