@@ -1,4 +1,4 @@
-module tcenal.dparsers;
+module tcenal.parsers;
 
 import parser_combinator.combinators;
 import parser_combinator.memo;
