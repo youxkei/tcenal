@@ -1,12 +1,13 @@
 module tcenal.dsl.lexer;
 
-import std.typecons : Typedef;
 import std.array : Appender;
 import std.ascii : isAlpha, isWhite;
 import std.range.primitives : empty;
+import std.algorithm : startsWith;
+import std.meta : AliasSeq;
 
 import compile_time_unittest : enableCompileTimeUnittest;
-import tcenal.dsl.token : OpCode, TokenKind, Token;
+import parser_combinator.token : Token;
 
 mixin enableCompileTimeUnittest;
 
@@ -18,15 +19,15 @@ Token[] lex(string src)
 unittest
 {
     assert(
-        lex(`foo <- #foo_bar baz <- "baz"`) ==
+        lex(q{foo <- @foo_bar baz <- "baz"}) ==
         [
-            Token(TokenKind.IDENTIFIER, OpCode.NOT_OP, "foo"),
-            Token(TokenKind.OPERATOR, OpCode.LEFT_ARROW),
-            Token(TokenKind.OPERATOR, OpCode.NUMBER_SIGN),
-            Token(TokenKind.IDENTIFIER, OpCode.NOT_OP, "foo_bar"),
-            Token(TokenKind.IDENTIFIER, OpCode.NOT_OP, "baz"),
-            Token(TokenKind.OPERATOR, OpCode.LEFT_ARROW),
-            Token(TokenKind.STRING_LITERAL, OpCode.NOT_OP, "baz"),
+            Token("foo", "identifier"),
+            Token("<-"),
+            Token("@"),
+            Token("foo_bar", "identifier"),
+            Token("baz", "identifier"),
+            Token("<-"),
+            Token(`"baz"`, "stringLiteral"),
         ]
     );
 }
@@ -36,75 +37,34 @@ private:
 Token[] root(string src) {
     Appender!(Token[]) tokenAppender;
 
+    loop:
     while (!src.empty) {
-        switch (src[0]) {
-            case '<':
-                src = src[1..$];
+        if (src[0].isWhite()) {
+            src = src[1..$];
+            continue;
+        }
 
-                if (src.empty) {
-                    throw new Exception("");
-                }
+        alias untypedTokens = AliasSeq!("<-", "@", "/", "*", "+", "?", "&", "!");
+        foreach (untypedToken; untypedTokens)
+        {
+            if (src.startsWith(untypedToken)) {
+                tokenAppender.put(Token(untypedToken));
+                src = src[untypedToken.length..$];
 
-                switch (src[0]) {
-                    case '-':
-                        tokenAppender.put(Token(TokenKind.OPERATOR, OpCode.LEFT_ARROW));
-                        src = src[1..$];
-                        continue;
+                continue loop;
+            }
+        }
 
-                    default:
-                        throw new Exception("");
-                }
+        if (src[0] == '"')
+        {
+            tokenAppender.put(stringLiteral(src));
+            continue;
+        }
 
-            case '#':
-                src = src[1..$];
-                tokenAppender.put(Token(TokenKind.OPERATOR, OpCode.NUMBER_SIGN));
-                continue;
-
-            case '/':
-                src = src[1..$];
-                tokenAppender.put(Token(TokenKind.OPERATOR, OpCode.SLASH));
-                continue;
-
-            case '*':
-                src = src[1..$];
-                tokenAppender.put(Token(TokenKind.OPERATOR, OpCode.ASTERISK));
-                continue;
-
-            case '+':
-                src = src[1..$];
-                tokenAppender.put(Token(TokenKind.OPERATOR, OpCode.PLUS));
-                continue;
-
-            case '?':
-                src = src[1..$];
-                tokenAppender.put(Token(TokenKind.OPERATOR, OpCode.QUESTION));
-                continue;
-
-            case '&':
-                src = src[1..$];
-                tokenAppender.put(Token(TokenKind.OPERATOR, OpCode.AMPERSAND));
-                continue;
-
-            case '!':
-                src = src[1..$];
-                tokenAppender.put(Token(TokenKind.OPERATOR, OpCode.EXCLAMATION));
-                continue;
-
-            case '"':
-                src = src[1..$];
-                tokenAppender.put(stringLiteral(src));
-                continue;
-
-            default:
-                if (src[0].isWhite()) {
-                    src = src[1..$];
-                    continue;
-                }
-
-                if (src[0].isAlpha()) {
-                    tokenAppender.put(identifier(src));
-                    continue;
-                }
+        if (src[0].isAlpha() || src[0] == '_')
+        {
+            tokenAppender.put(identifier(src));
+            continue;
         }
 
         throw new Exception("");
@@ -114,36 +74,41 @@ Token[] root(string src) {
 }
 
 Token stringLiteral(ref string src) {
-    Appender!string charAppender;
+    size_t closingDoubleQuoteIndex;
 
-    while (true) {
-        if (src.empty) {
-            throw new Exception("");
-        }
+    foreach (i, c; src) {
+        if (i == 0) continue; // starting double quote
 
-        if (src[0] == '"') {
-            src = src[1..$];
+        if (c == '"')
+        {
+            closingDoubleQuoteIndex = i;
             break;
         }
-
-        charAppender.put(src[0]);
-        src = src[1..$];
     }
 
-    return Token(TokenKind.STRING_LITERAL, OpCode.NOT_OP, charAppender.data);
+    if (closingDoubleQuoteIndex == 0) throw new Exception("");
+
+    Token token = Token(src[0..(closingDoubleQuoteIndex + 1)], "stringLiteral");
+    src = src[(closingDoubleQuoteIndex + 1)..$];
+
+    return token;
 }
 
 Token identifier(ref string src) {
-    Appender!string charAppender;
+    size_t immediatelyFollowingWhiteSpaceIndex;
 
-    while (!src.empty) {
-        if (src[0].isWhite()) {
+    foreach (i, c; src) {
+        if (c.isWhite())
+        {
+            immediatelyFollowingWhiteSpaceIndex = i;
             break;
         }
-
-        charAppender.put(src[0]);
-        src = src[1..$];
     }
 
-    return Token(TokenKind.IDENTIFIER, OpCode.NOT_OP, charAppender.data);
+    if (immediatelyFollowingWhiteSpaceIndex == 0) immediatelyFollowingWhiteSpaceIndex = src.length;
+
+    Token token = Token(src[0..immediatelyFollowingWhiteSpaceIndex], "identifier");
+    src = src[immediatelyFollowingWhiteSpaceIndex..$];
+
+    return token;
 }
