@@ -269,22 +269,28 @@ unittest
 
 Token identifier(ref string src)
 {
-    size_t immediatelyFollowingNonAlphaIndex;
+    size_t immediatelyFollowingNonAlphaNumIndex;
 
     foreach (i, c; src) {
-        if (!c.isAlpha())
+        if (!c.isAlphaNum() && c != '_')
         {
-            immediatelyFollowingNonAlphaIndex = i;
+            immediatelyFollowingNonAlphaNumIndex = i;
             break;
         }
     }
 
-    if (immediatelyFollowingNonAlphaIndex == 0) immediatelyFollowingNonAlphaIndex = src.length;
+    if (immediatelyFollowingNonAlphaNumIndex == 0) immediatelyFollowingNonAlphaNumIndex = src.length;
 
-    Token token = Token(src[0..immediatelyFollowingNonAlphaIndex], "identifier");
-    src = src[immediatelyFollowingNonAlphaIndex..$];
+    Token token = Token(src[0..immediatelyFollowingNonAlphaNumIndex], "identifier");
+    src = src[immediatelyFollowingNonAlphaNumIndex..$];
 
     return token;
+}
+unittest
+{
+    mixin assertThat!("token", q{allowRvalue!identifier(q{foo})},         fields!()._!(eq!q{foo},         eq!"identifier"));
+    mixin assertThat!("token", q{allowRvalue!identifier(q{bar57})},       fields!()._!(eq!q{bar57},       eq!"identifier"));
+    mixin assertThat!("token", q{allowRvalue!identifier(q{_foo_bar_57})}, fields!()._!(eq!q{_foo_bar_57}, eq!"identifier"));
 }
 
 Token numericLiteral(ref string src)
