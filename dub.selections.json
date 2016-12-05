@@ -1,4 +1,7 @@
 {
 	"fileVersion": 1,
-	"versions": {}
+	"versions": {
+		"assert_that": "0.0.4",
+		"compile-time-unittest": "0.0.3"
+	}
 }

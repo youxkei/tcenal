@@ -1,13 +1,16 @@
 module tcenal.d.lexer;
 
 import std.array : Appender;
-import std.ascii : isAlpha, isWhite, isDigit;
+import std.ascii : isAlpha, isAlphaNum, isWhite, isDigit;
 import std.range.primitives : empty;
 import std.algorithm : startsWith;
 import std.meta : AliasSeq;
 
-import compile_time_unittest : enableCompileTimeUnittest;
+
 import parser_combinator.token : Token;
+
+import compile_time_unittest : enableCompileTimeUnittest;
+import assert_that : assertThat, eq, array, fields;
 
 mixin enableCompileTimeUnittest;
 
@@ -18,33 +21,36 @@ Token[] lex(string src)
 }
 unittest
 {
-    assert(
-        lex(q{
-            import std.stdio : writeln;
-            void main()
-            {
-                writeln("Hello, world!");
-            }
-        }) == [
-            Token(q{import}, "identifier"),
-            Token(q{std}, "identifier"),
-            Token(q{.}),
-            Token(q{stdio}, "identifier"),
-            Token(q{:}),
-            Token(q{writeln}, "identifier"),
-            Token(q{;}),
-            Token(q{void}, "identifier"),
-            Token(q{main}, "identifier"),
-            Token(q{(}),
-            Token(q{)}),
-            Token("{"),
-            Token(q{writeln}, "identifier"),
-            Token(q{(}),
-            Token(q{"Hello, world!"}, "stringLiteral"),
-            Token(q{)}),
-            Token(q{;}),
-            Token("}"),
-        ]
+    mixin assertThat!(
+        "tokens", q{
+            lex(q{
+                import std.stdio : writeln;
+                void main()
+                {
+                    writeln("Hello, world!");
+                }
+            })
+        },
+        array!()._!(
+            fields!()._!(eq!q{import}, eq!"identifier"),
+            fields!()._!(eq!q{std}, eq!"identifier"),
+            fields!()._!(eq!q{.}, eq!""),
+            fields!()._!(eq!q{stdio}, eq!"identifier"),
+            fields!()._!(eq!q{:}, eq!""),
+            fields!()._!(eq!q{writeln}, eq!"identifier"),
+            fields!()._!(eq!q{;}, eq!""),
+            fields!()._!(eq!q{void}, eq!"identifier"),
+            fields!()._!(eq!q{main}, eq!"identifier"),
+            fields!()._!(eq!q{(}, eq!""),
+            fields!()._!(eq!q{)}, eq!""),
+            fields!()._!(eq!"{", eq!""),
+            fields!()._!(eq!q{writeln}, eq!"identifier"),
+            fields!()._!(eq!q{(}, eq!""),
+            fields!()._!(eq!q{"Hello, world!"}, eq!"stringLiteral"),
+            fields!()._!(eq!q{)}, eq!""),
+            fields!()._!(eq!q{;}, eq!""),
+            fields!()._!(eq!"}", eq!""),
+        )
     );
 }
 
