@@ -1,6 +1,6 @@
-module parser_combinator.memo;
+module tcenal.parser_combinator.memo;
 
-import parser_combinator.parsing_result;
+import tcenal.parser_combinator.parsing_result;
 
 struct MemoEntry
 {

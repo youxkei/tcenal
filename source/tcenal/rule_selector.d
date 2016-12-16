@@ -10,11 +10,11 @@ template createRuleSelector(string module_ = __MODULE__)
     template RuleSelector(string rule, bool isSuper = false)
     {
         mixin ("static import " ~ module_ ~ ";");
-        static import tcenal.dparsers;
+        static import tcenal.d.parsers;
 
         static if (isSuper || !__traits(compiles, mixin (module_ ~ "." ~ rule)))
         {
-            alias RuleSelector = apply!(mixin ("tcenal.dparsers." ~ rule), createRuleSelector!module_.RuleSelector);
+            alias RuleSelector = apply!(mixin ("tcenal.d.parsers." ~ rule), createRuleSelector!module_.RuleSelector);
         }
         else
         {

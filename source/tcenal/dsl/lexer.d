@@ -1,13 +1,14 @@
 module tcenal.dsl.lexer;
 
 import std.array : Appender;
-import std.ascii : isAlpha, isWhite;
+import std.ascii : isAlpha, isAlphaNum, isWhite;
 import std.range.primitives : empty;
 import std.algorithm : startsWith;
 import std.meta : AliasSeq;
 
+import tcenal.parser_combinator.token : Token;
+
 import compile_time_unittest : enableCompileTimeUnittest;
-import parser_combinator.token : Token;
 
 mixin enableCompileTimeUnittest;
 
@@ -19,15 +20,16 @@ Token[] lex(string src)
 unittest
 {
     assert(
-        lex(q{foo <- @foo_bar baz <- "baz"}) ==
+        lex(q{foo <- @foo_bar baz* <- "baz"}) ==
         [
             Token("foo", "identifier"),
             Token("<-"),
             Token("@"),
             Token("foo_bar", "identifier"),
             Token("baz", "identifier"),
+            Token("*"),
             Token("<-"),
-            Token(`"baz"`, "stringLiteral"),
+            Token("baz", "stringLiteral"),
         ]
     );
 }
@@ -44,7 +46,7 @@ Token[] root(string src) {
             continue;
         }
 
-        alias untypedTokens = AliasSeq!("<-", "@", "/", "*", "+", "?", "&", "!");
+        alias untypedTokens = AliasSeq!("<-", "@", "/", "*", "+", "?", "&", "!", "(", ")");
         foreach (untypedToken; untypedTokens)
         {
             if (src.startsWith(untypedToken)) {
@@ -88,7 +90,7 @@ Token stringLiteral(ref string src) {
 
     if (closingDoubleQuoteIndex == 0) throw new Exception("");
 
-    Token token = Token(src[0..(closingDoubleQuoteIndex + 1)], "stringLiteral");
+    Token token = Token(src[1..closingDoubleQuoteIndex], "stringLiteral");
     src = src[(closingDoubleQuoteIndex + 1)..$];
 
     return token;
@@ -98,7 +100,7 @@ Token identifier(ref string src) {
     size_t immediatelyFollowingWhiteSpaceIndex;
 
     foreach (i, c; src) {
-        if (c.isWhite())
+        if (!c.isAlphaNum() && c != '_')
         {
             immediatelyFollowingWhiteSpaceIndex = i;
             break;

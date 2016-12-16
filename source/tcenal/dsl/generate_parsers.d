@@ -1,8 +1,10 @@
 module tcenal.dsl.generate_parsers;
 
-import parser_combinator.parse_tree_node : ParseTreeNode;
-import parser_combinator.memo : Memo;
+import tcenal.parser_combinator.parse_tree_node : ParseTreeNode;
+import tcenal.parser_combinator.memo : Memo;
+import tcenal.dsl.lexer : lex;
 import tcenal.dsl.parsers : rules;
+
 
 private string generate(ParseTreeNode node, string ruleName = "")
 {
@@ -23,8 +25,8 @@ private string generate(ParseTreeNode node, string ruleName = "")
             break;
 
         case "rule":
-            ruleName = node.children[0].children[0].children[0].value;
-            generated  = "ParsingResult " ~ ruleName ~ "(alias ruleSelector)(string input, size_t position, ref Memo memo)\n";
+            ruleName = node.children[0].children[0].token.value;
+            generated  = "ParsingResult " ~ ruleName ~ "(alias ruleSelector)(Token[] input, size_t position, ref Memo memo)\n";
             generated ~= "{\nreturn applyRule!(\n";
             generated ~= node.children[0].children[1].generate(ruleName);
             generated ~= "\n)(input, position, memo);\n}";
@@ -53,9 +55,9 @@ private string generate(ParseTreeNode node, string ruleName = "")
             break;
 
         case "prefixExpr":
-            if (node.children[0].ruleName == "#sequence")
+            if (node.children[0].ruleName == "#sequence" && node.children[0].children[0].token.type == "")
             {
-                switch (node.children[0].children[0].value)
+                switch (node.children[0].children[0].token.value)
                 {
                     case "&":
                         generated = "andPred!(\n" ~ node.children[0].children[1].generate(ruleName) ~ "\n)";
@@ -76,9 +78,9 @@ private string generate(ParseTreeNode node, string ruleName = "")
             break;
 
         case "postfixExpr":
-            if (node.children[0].ruleName == "#sequence")
+            if (node.children[0].ruleName == "#sequence" && node.children[0].children[1].token.type == "")
             {
-                switch (node.children[0].children[1].value)
+                switch (node.children[0].children[1].token.value)
                 {
                     case "*":
                         generated = "zeroOrMore!(\n" ~ node.children[0].children[0].generate(ruleName) ~ "\n)";
@@ -102,23 +104,27 @@ private string generate(ParseTreeNode node, string ruleName = "")
             }
             break;
 
-        case "identifier":
-            if (node.children[0].value == "super")
+        case "primaryExpr":
+            generated = node.children[0].generate(ruleName);
+            break;
+
+        case "ruleName":
+            if (node.children[0].token.type == "" && node.children[0].token.value == "super")
             {
-                generated = "skip!(ruleSelector!(\"" ~ ruleName ~ "\", true))";
+                generated = "ruleSelector!(\"" ~ ruleName ~ "\", true)";
             }
             else
             {
-                generated = "skip!(ruleSelector!\"" ~ node.children[0].value ~ "\")";
+                generated = "ruleSelector!\"" ~ node.children[0].token.value ~ "\"";
             }
             break;
 
-        case "stringLiteral":
-            generated = "skip!(toToken!\"" ~ node.children[0].value ~ "\")";
+        case "tokenValue":
+            generated = "parseToken!\"" ~ node.children[0].token.value ~ "\"";
             break;
 
-        case "primaryExpr":
-            generated = node.children[0].generate(ruleName);
+        case "tokenType":
+            generated = "parseTokenWithType!\"" ~ node.children[0].token.value ~ "\"";
             break;
 
         case "#repeat":
@@ -134,7 +140,7 @@ private string generate(ParseTreeNode node, string ruleName = "")
             break;
 
         default:
-            assert (0);
+            assert(false, node.toString());
     }
 
     return generated;
@@ -145,5 +151,5 @@ string generateParsers(string src)
 {
     Memo memo;
 
-    return src.rules(0, memo).node.generate();
+    return src.lex().rules(0, memo).node.generate();
 }

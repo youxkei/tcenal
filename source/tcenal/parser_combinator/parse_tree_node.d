@@ -1,20 +1,22 @@
-module parser_combinator.parse_tree_node;
+module tcenal.parser_combinator.parse_tree_node;
 
 import std.algorithm : map, joiner;
 import std.conv : to;
 import std.range : repeat;
 
+import tcenal.parser_combinator.token;
+
 struct ParseTreeNode
 {
-    string value;
+    Token token;
     ParseTreeNode[] children;
     string ruleName;
 
     string toAsciiTree(string indent = "", bool isLast = true)
     {
-        if (value.length > 0)
+        if (token.value.length > 0)
         {
-            return indent ~ "+-\"" ~ value ~ "\"\n";
+            return indent ~ "+-\"" ~ token.value ~ "\"\n";
         }
 
         string result;

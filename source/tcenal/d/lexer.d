@@ -6,8 +6,8 @@ import std.range.primitives : empty;
 import std.algorithm : startsWith;
 import std.meta : AliasSeq;
 
-
-import parser_combinator.token : Token;
+import tcenal.parser_combinator.token : Token;
+import tcenal.util : allowRvalue;
 
 import compile_time_unittest : enableCompileTimeUnittest;
 import assert_that : assertThat, eq, array, fields;
@@ -32,14 +32,14 @@ unittest
             })
         },
         array!()._!(
-            fields!()._!(eq!q{import}, eq!"identifier"),
+            fields!()._!(eq!q{import}, eq!""),
             fields!()._!(eq!q{std}, eq!"identifier"),
             fields!()._!(eq!q{.}, eq!""),
             fields!()._!(eq!q{stdio}, eq!"identifier"),
             fields!()._!(eq!q{:}, eq!""),
             fields!()._!(eq!q{writeln}, eq!"identifier"),
             fields!()._!(eq!q{;}, eq!""),
-            fields!()._!(eq!q{void}, eq!"identifier"),
+            fields!()._!(eq!q{void}, eq!""),
             fields!()._!(eq!q{main}, eq!"identifier"),
             fields!()._!(eq!q{(}, eq!""),
             fields!()._!(eq!q{)}, eq!""),
@@ -52,13 +52,6 @@ unittest
             fields!()._!(eq!"}", eq!""),
         )
     );
-}
-
-private:
-
-version(unittest) auto allowRvalue(alias f, Args...)(Args args)
-{
-    return f(args);
 }
 
 Token[] root(string src)
@@ -116,6 +109,7 @@ Token[] root(string src)
         if (src[0].isDigit())
         {
             tokenAppender.put(numericLiteral(src));
+            continue;
         }
 
         if (src[0].isAlpha() || src[0] == '_')
@@ -124,7 +118,7 @@ Token[] root(string src)
             continue;
         }
 
-        throw new Exception("");
+        throw new Exception(src);
     }
 
     return tokenAppender.data;
@@ -284,6 +278,15 @@ Token identifier(ref string src)
     Token token = Token(src[0..immediatelyFollowingNonAlphaNumIndex], "identifier");
     src = src[immediatelyFollowingNonAlphaNumIndex..$];
 
+    alias keywords = AliasSeq!("abstract", "alias", "align", "asm", "assert", "auto", "body", "bool", "break", "byte", "case", "cast", "catch", "cdouble", "cent", "cfloat", "char", "class", "const", "continue", "creal", "dchar", "debug", "default", "delegate", "delete (deprecated)", "deprecated", "do", "double", "else", "enum", "export", "extern", "false", "final", "finally", "float", "for", "foreach", "foreach_reverse", "function", "goto", "idouble", "if", "ifloat", "immutable", "import", "in", "inout", "int", "interface", "invariant", "ireal", "is", "lazy", "long", "macro (unused)", "mixin", "module", "new", "nothrow", "null", "out", "override", "package", "pragma", "private", "protected", "public", "pure", "real", "ref", "return", "scope", "shared", "short", "static", "struct", "super", "switch", "synchronized", "template", "this", "throw", "true", "try", "typedef", "typeid", "typeof", "ubyte", "ucent", "uint", "ulong", "union", "unittest", "ushort", "version", "void", "volatile", "wchar", "while", "with", "__FILE__", "__FILE_FULL_PATH__", "__MODULE__", "__LINE__", "__FUNCTION__", "__PRETTY_FUNCTION__", "__gshared", "__traits", "__vector", "__parameters");
+    foreach (keyword; keywords)
+    {
+        if (token.value == keyword) {
+            token.type = "";
+            break;
+        }
+    }
+
     return token;
 }
 unittest
@@ -308,12 +311,12 @@ Token numericLiteral(ref string src)
 
     if (immediatelyFollowingNonDigitIndex == 0) immediatelyFollowingNonDigitIndex = src.length;
 
-    Token token = Token(src[0..immediatelyFollowingNonDigitIndex], "numericLiteral");
+    Token token = Token(src[0..immediatelyFollowingNonDigitIndex], "integerLiteral");
     src = src[immediatelyFollowingNonDigitIndex..$];
 
     return token;
 }
 unittest
 {
-    assert(allowRvalue!numericLiteral(q{123}) == Token(q{123}, "numericLiteral"));
+    assert(allowRvalue!numericLiteral(q{123}) == Token(q{123}, "integerLiteral"));
 }

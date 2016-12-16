@@ -1,7 +1,7 @@
-module parser_combinator.report_parsing;
+module tcenal.parser_combinator.report_parsing;
 
 import compile_time_unittest : enableCompileTimeUnittest;
-import parser_combinator.memo : Memo, MemoEntry;
+import tcenal.parser_combinator.memo : Memo, MemoEntry;
 
 import std.stdio : writeln;
 import std.algorithm : sort, splitter, until;

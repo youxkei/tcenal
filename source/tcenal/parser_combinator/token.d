@@ -1,4 +1,4 @@
-module parser_combinator.token;
+module tcenal.parser_combinator.token;
 
 struct Token
 {
