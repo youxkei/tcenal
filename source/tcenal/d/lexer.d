@@ -7,7 +7,6 @@ import std.algorithm : startsWith;
 import std.meta : AliasSeq;
 
 import tcenal.parser_combinator.token : Token;
-import tcenal.util : allowRvalue;
 
 import compile_time_unittest : enableCompileTimeUnittest;
 import assert_that : assertThat, eq, array, fields;
@@ -124,7 +123,7 @@ Token[] root(string src)
     return tokenAppender.data;
 }
 
-void lineComment(ref string src)
+void lineComment()(auto ref string src)
 {
     while (!src.empty)
     {
@@ -138,7 +137,7 @@ void lineComment(ref string src)
     }
 }
 
-void blockComment(ref string src)
+void blockComment()(auto ref string src)
 {
     while (!src.empty)
     {
@@ -152,7 +151,7 @@ void blockComment(ref string src)
     }
 }
 
-void nestingBlockComment(ref string src)
+void nestingBlockComment()(auto ref string src)
 {
     src = src[2..$];
 
@@ -173,7 +172,7 @@ void nestingBlockComment(ref string src)
     }
 }
 
-Token stringLiteral(ref string src)
+Token stringLiteral()(auto ref string src)
 {
     char closingQuote;
     bool escapeSequenceAvailable;
@@ -230,13 +229,13 @@ Token stringLiteral(ref string src)
 }
 unittest
 {
-    assert(allowRvalue!stringLiteral(q{"foo"}) == Token(q{"foo"}, "stringLiteral"));
-    assert(allowRvalue!stringLiteral(q{"foo\"bar"}) == Token(q{"foo\"bar"}, "stringLiteral"));
-    assert(allowRvalue!stringLiteral(q{r"f\o\o"}) == Token(q{r"f\o\o"}, "stringLiteral"));
-    assert(allowRvalue!stringLiteral(q{`"f\o\o"`}) == Token(q{`"f\o\o"`}, "stringLiteral"));
+    assert(stringLiteral(q{"foo"}) == Token(q{"foo"}, "stringLiteral"));
+    assert(stringLiteral(q{"foo\"bar"}) == Token(q{"foo\"bar"}, "stringLiteral"));
+    assert(stringLiteral(q{r"f\o\o"}) == Token(q{r"f\o\o"}, "stringLiteral"));
+    assert(stringLiteral(q{`"f\o\o"`}) == Token(q{`"f\o\o"`}, "stringLiteral"));
 }
 
-Token characterLiteral(ref string src)
+Token characterLiteral()(auto ref string src)
 {
     Token token;
     token.type = "characterLiteral";
@@ -256,12 +255,12 @@ Token characterLiteral(ref string src)
 }
 unittest
 {
-    assert(allowRvalue!characterLiteral(q{'c'}) == Token(q{'c'}, "characterLiteral"));
-    assert(allowRvalue!characterLiteral(q{'\n'}) == Token(q{'\n'}, "characterLiteral"));
-    assert(allowRvalue!characterLiteral(q{'\\'}) == Token(q{'\\'}, "characterLiteral"));
+    assert(characterLiteral(q{'c'}) == Token(q{'c'}, "characterLiteral"));
+    assert(characterLiteral(q{'\n'}) == Token(q{'\n'}, "characterLiteral"));
+    assert(characterLiteral(q{'\\'}) == Token(q{'\\'}, "characterLiteral"));
 }
 
-Token identifier(ref string src)
+Token identifier()(auto ref string src)
 {
     size_t immediatelyFollowingNonAlphaNumIndex;
 
@@ -291,12 +290,12 @@ Token identifier(ref string src)
 }
 unittest
 {
-    mixin assertThat!("token", q{allowRvalue!identifier(q{foo})},         fields!()._!(eq!q{foo},         eq!"identifier"));
-    mixin assertThat!("token", q{allowRvalue!identifier(q{bar57})},       fields!()._!(eq!q{bar57},       eq!"identifier"));
-    mixin assertThat!("token", q{allowRvalue!identifier(q{_foo_bar_57})}, fields!()._!(eq!q{_foo_bar_57}, eq!"identifier"));
+    mixin assertThat!("token", q{identifier(q{foo})},         fields!()._!(eq!q{foo},         eq!"identifier"));
+    mixin assertThat!("token", q{identifier(q{bar57})},       fields!()._!(eq!q{bar57},       eq!"identifier"));
+    mixin assertThat!("token", q{identifier(q{_foo_bar_57})}, fields!()._!(eq!q{_foo_bar_57}, eq!"identifier"));
 }
 
-Token numericLiteral(ref string src)
+Token numericLiteral()(auto ref string src)
 {
     size_t immediatelyFollowingNonDigitIndex;
 
@@ -318,5 +317,5 @@ Token numericLiteral(ref string src)
 }
 unittest
 {
-    assert(allowRvalue!numericLiteral(q{123}) == Token(q{123}, "integerLiteral"));
+    assert(numericLiteral(q{123}) == Token(q{123}, "integerLiteral"));
 }

@@ -2,7 +2,6 @@ module tcenal.dsl.parsers;
 
 import compile_time_unittest : enableCompileTimeUnittest;
 
-import tcenal.util : allowRvalue;
 import tcenal.parser_combinator.token : Token;
 import tcenal.parser_combinator.parsing_result : ParsingResult;
 import tcenal.parser_combinator.parse_tree_node : ParseTreeNode;
