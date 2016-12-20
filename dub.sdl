@@ -1,0 +1,12 @@
+name "tcenal"
+description "A compile-time syntax extension library."
+authors "Hisayuki Mima"
+copyright "Copyright © 2014"
+license "CC0"
+configuration "unittest" {
+    dependency "compile-time-unittest" version="~>0.0.3"
+    dependency "assert_that" version="~>0.0.4"
+    stringImportPaths "." "views"
+    targetType "library"
+    buildRequirements "disallowDeprecations"
+}
