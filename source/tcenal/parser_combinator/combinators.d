@@ -64,6 +64,31 @@ unittest
 }
 
 
+ParsingResult parseTokenWithValue(string tokenValue)(Token[] input, size_t position, ref Memo memo)
+{
+    if (input.length > position && input[position].value == tokenValue)
+    {
+        return ParsingResult(true, position + 1, ParseTreeNode(input[position]));
+    }
+    else
+    {
+        return ParsingResult(false);
+    }
+}
+unittest
+{
+    Memo memo;
+
+    with (parseTokenWithValue!"foo"([Token("foo", "identifier")], 0, memo))
+    {
+        assert (success);
+        assert (nextPosition == 1);
+        assert (node.token.value == "foo");
+        assert (node.token.type == "identifier");
+    }
+}
+
+
 ParsingResult parseWithMakingRuleNode(alias parser, string ruleName)(Token[] input, size_t position, ref Memo memo)
 {
     ParsingResult parsingResult = parser(input, position, memo);

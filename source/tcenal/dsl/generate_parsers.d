@@ -26,8 +26,8 @@ private string generate(ParseTreeNode node, string ruleName = "")
 
         case "rule":
             ruleName = node.children[0].children[0].token.value;
-            generated  = "ParsingResult " ~ ruleName ~ "(alias ruleSelector)(Token[] input, size_t position, ref Memo memo)\n";
-            generated ~= "{\nreturn applyRule!(\n";
+            generated  = "tcenal.parser_combinator.parsing_result.ParsingResult " ~ ruleName ~ "(alias ruleSelector)(tcenal.parser_combinator.token.Token[] input, size_t position, ref tcenal.parser_combinator.memo.Memo memo)\n";
+            generated ~= "{\nreturn tcenal.parser_combinator.combinators.applyRule!(\n";
             generated ~= node.children[0].children[1].generate(ruleName);
             generated ~= "\n)(input, position, memo);\n}";
             break;
@@ -39,7 +39,7 @@ private string generate(ParseTreeNode node, string ruleName = "")
             }
             else
             {
-                generated = "choice!(\n" ~ node.children[0].generate(ruleName) ~ "\n)";
+                generated = "tcenal.parser_combinator.combinators.choice!(\n" ~ node.children[0].generate(ruleName) ~ "\n)";
             }
             break;
 
@@ -50,7 +50,7 @@ private string generate(ParseTreeNode node, string ruleName = "")
             }
             else
             {
-                generated = "sequence!(\n" ~ node.children[0].generate(ruleName) ~ "\n)";
+                generated = "tcenal.parser_combinator.combinators.sequence!(\n" ~ node.children[0].generate(ruleName) ~ "\n)";
             }
             break;
 
@@ -60,11 +60,11 @@ private string generate(ParseTreeNode node, string ruleName = "")
                 switch (node.children[0].children[0].token.value)
                 {
                     case "&":
-                        generated = "andPred!(\n" ~ node.children[0].children[1].generate(ruleName) ~ "\n)";
+                        generated = "tcenal.parser_combinator.combinators.andPred!(\n" ~ node.children[0].children[1].generate(ruleName) ~ "\n)";
                         break;
 
                     case "!":
-                        generated = "notPred!(\n" ~ node.children[0].children[1].generate(ruleName) ~ "\n)";
+                        generated = "tcenal.parser_combinator.combinators.notPred!(\n" ~ node.children[0].children[1].generate(ruleName) ~ "\n)";
                         break;
 
                     default:
@@ -83,15 +83,15 @@ private string generate(ParseTreeNode node, string ruleName = "")
                 switch (node.children[0].children[1].token.value)
                 {
                     case "*":
-                        generated = "zeroOrMore!(\n" ~ node.children[0].children[0].generate(ruleName) ~ "\n)";
+                        generated = "tcenal.parser_combinator.combinators.zeroOrMore!(\n" ~ node.children[0].children[0].generate(ruleName) ~ "\n)";
                         break;
 
                     case "+":
-                        generated = "oneOrMore!(\n" ~ node.children[0].children[0].generate(ruleName) ~ "\n)";
+                        generated = "tcenal.parser_combinator.combinators.oneOrMore!(\n" ~ node.children[0].children[0].generate(ruleName) ~ "\n)";
                         break;
 
                     case "?":
-                        generated = "option!(\n" ~ node.children[0].children[0].generate(ruleName) ~ "\n)";
+                        generated = "tcenal.parser_combinator.combinators.option!(\n" ~ node.children[0].children[0].generate(ruleName) ~ "\n)";
                         break;
 
                     default:
@@ -120,11 +120,11 @@ private string generate(ParseTreeNode node, string ruleName = "")
             break;
 
         case "tokenValue":
-            generated = "parseToken!\"" ~ node.children[0].token.value ~ "\"";
+            generated = "tcenal.parser_combinator.combinators.parseTokenWithValue!\"" ~ node.children[0].token.value ~ "\"";
             break;
 
         case "tokenType":
-            generated = "parseTokenWithType!\"" ~ node.children[0].token.value ~ "\"";
+            generated = "tcenal.parser_combinator.combinators.parseTokenWithType!\"" ~ node.children[0].token.value ~ "\"";
             break;
 
         case "#repeat":
@@ -149,7 +149,14 @@ private string generate(ParseTreeNode node, string ruleName = "")
 
 string generateParsers(string src)
 {
+    enum preamble = q{
+        static import tcenal.parser_combinator.token;
+        static import tcenal.parser_combinator.memo;
+        static import tcenal.parser_combinator.parsing_result;
+        static import tcenal.parser_combinator.combinators;
+    };
+
     Memo memo;
 
-    return src.lex().rules(0, memo).node.generate();
+    return preamble ~ src.lex().rules(0, memo).node.generate();
 }
