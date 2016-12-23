@@ -83,11 +83,26 @@ private string generate(ParseTreeNode node, string ruleName = "")
                 switch (node.children[0].children[1].token.value)
                 {
                     case "*":
-                        generated = "tcenal.parser_combinator.combinators.zeroOrMore!(\n" ~ node.children[0].children[0].generate(ruleName) ~ "\n)";
+                        if (node.children[0].children[2].children.length == 1)
+                        {
+                            generated = "tcenal.parser_combinator.combinators.zeroOrMoreWithSeparator!(\n" ~ node.children[0].children[0].generate(ruleName) ~ ",\n" ~ node.children[0].children[2].children[0].generate(ruleName) ~ "\n)";
+                        }
+                        else
+                        {
+                            generated = "tcenal.parser_combinator.combinators.zeroOrMore!(\n" ~ node.children[0].children[0].generate(ruleName) ~ "\n)";
+                        }
+
                         break;
 
                     case "+":
-                        generated = "tcenal.parser_combinator.combinators.oneOrMore!(\n" ~ node.children[0].children[0].generate(ruleName) ~ "\n)";
+                        if (node.children[0].children[2].children.length == 1)
+                        {
+                            generated = "tcenal.parser_combinator.combinators.oneOrMoreWithSeparator!(\n" ~ node.children[0].children[0].generate(ruleName) ~ ",\n)" ~ node.children[0].children[2].children[0].generate(ruleName) ~ "\n)";
+                        }
+                        else
+                        {
+                            generated = "tcenal.parser_combinator.combinators.oneOrMore!(\n" ~ node.children[0].children[0].generate(ruleName) ~ "\n)";
+                        }
                         break;
 
                     case "?":
@@ -109,7 +124,7 @@ private string generate(ParseTreeNode node, string ruleName = "")
             break;
 
         case "ruleName":
-            if (node.children[0].token.type == "" && node.children[0].token.value == "super")
+            if (node.children[0].token.value == "super")
             {
                 generated = "ruleSelector!(\"" ~ ruleName ~ "\", true)";
             }

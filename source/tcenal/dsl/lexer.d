@@ -46,7 +46,7 @@ Token[] root(string src) {
             continue;
         }
 
-        alias untypedTokens = AliasSeq!("<-", "@", "/", "*", "+", "?", "&", "!", "(", ")");
+        alias untypedTokens = AliasSeq!("<-", "@", "/", "*", "+", "?", "&", "!", "(", ")", "<", ">");
         foreach (untypedToken; untypedTokens)
         {
             if (src.startsWith(untypedToken)) {

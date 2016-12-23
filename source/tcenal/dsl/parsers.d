@@ -7,6 +7,7 @@ import tcenal.parser_combinator.parsing_result : ParsingResult;
 import tcenal.parser_combinator.parse_tree_node : ParseTreeNode;
 import tcenal.parser_combinator.memo : Memo;
 import tcenal.parser_combinator.combinators : parseToken, parseTokenWithType, applyRule, sequence, select, choice, option, zeroOrMore, oneOrMore, zeroOrMoreWithSeparator, oneOrMoreWithSeparator, not;
+import tcenal.parser_combinator.util : parseWithoutMemo;
 import tcenal.dsl.lexer : lex;
 
 import std.ascii : isWhite, isAlpha, isAlphaNum;
@@ -215,8 +216,18 @@ ParsingResult postfixExpr(Token[] input, size_t position, ref Memo memo)
                 choice!(
                     parseToken!"*",
                     parseToken!"+",
-                    parseToken!"?",
+                ),
+                option!(
+                    select!(1,
+                        parseToken!"<",
+                        choiceExpr,
+                        parseToken!">",
+                    )
                 )
+            ),
+            sequence!(
+                primaryExpr,
+                parseToken!"?",
             ),
             primaryExpr
         )
@@ -224,8 +235,7 @@ ParsingResult postfixExpr(Token[] input, size_t position, ref Memo memo)
 }
 unittest
 {
-    Memo memo;
-    with (postfixExpr(lex(q{foo*}), 0, memo))
+    with (parseWithoutMemo!postfixExpr(lex(q{foo*})))
     {
         assert (success);
         assert (nextPosition == 2);
@@ -236,6 +246,31 @@ unittest
         assert (node.children[0].children[0].children[0].children[0].token.value == "foo");
         assert (node.children[0].children[0].children[0].children[0].token.type == "identifier");
         assert (node.children[0].children[1].token.value == "*");
+        assert (node.children[0].children[2].ruleName == "#option");
+        assert (node.children[0].children[2].children.length == 0);
+    }
+    with (parseWithoutMemo!postfixExpr(lex(q{foo*<foo>})))
+    {
+        assert (success);
+        assert (nextPosition == 5);
+        assert (node.ruleName == "postfixExpr");
+        assert (node.children[0].ruleName == "#sequence");
+        assert (node.children[0].children[0].ruleName == "primaryExpr");
+        assert (node.children[0].children[0].children[0].ruleName == "ruleName");
+        assert (node.children[0].children[0].children[0].children[0].token.value == "foo");
+        assert (node.children[0].children[0].children[0].children[0].token.type == "identifier");
+        assert (node.children[0].children[1].token.value == "*");
+        assert (node.children[0].children[2].ruleName == "#option");
+        assert (node.children[0].children[2].children[0].ruleName == "choiceExpr");
+        assert (node.children[0].children[2].children[0].children[0].ruleName == "#repeat");
+        assert (node.children[0].children[2].children[0].children[0].children[0].ruleName == "sequenceExpr");
+        assert (node.children[0].children[2].children[0].children[0].children[0].children[0].ruleName == "#repeat");
+        assert (node.children[0].children[2].children[0].children[0].children[0].children[0].children[0].ruleName == "prefixExpr");
+        assert (node.children[0].children[2].children[0].children[0].children[0].children[0].children[0].children[0].ruleName == "postfixExpr");
+        assert (node.children[0].children[2].children[0].children[0].children[0].children[0].children[0].children[0].children[0].ruleName == "primaryExpr");
+        assert (node.children[0].children[2].children[0].children[0].children[0].children[0].children[0].children[0].children[0].children[0].ruleName == "ruleName");
+        assert (node.children[0].children[2].children[0].children[0].children[0].children[0].children[0].children[0].children[0].children[0].children[0].token.value == "foo");
+        assert (node.children[0].children[2].children[0].children[0].children[0].children[0].children[0].children[0].children[0].children[0].children[0].token.type == "identifier");
     }
 }
 

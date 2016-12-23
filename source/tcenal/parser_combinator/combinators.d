@@ -433,7 +433,7 @@ ParsingResult repeatWithSeparator(alias parser, alias separator, size_t n)(Token
         return ParsingResult(true, position, ParseTreeNode(Token(), [], "#repeat"));
     }
 
-    if (parsingResult.node.children[1].children.length < n - 1)
+    if (parsingResult.node.children[1].children.length + 1 < n)
     {
         return ParsingResult(false);
     }
